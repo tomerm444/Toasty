@@ -1,10 +1,11 @@
 /* טוסטי הגיבור — the game: hero controls, game flow, menus and HUD */
 'use strict';
 (() => {
-const G = window.G, V3 = THREE.Vector3, $ = id => document.getElementById(id);
+const G = window.G, $ = id => document.getElementById(id);
 const stage = $('stage');
 function fail(msg) { const e = $('err'); e.textContent = msg; e.hidden = false; $('loading').hidden = true; }
-if (!window.THREE || !G || !G.initRenderer) { fail('לא הצלחתי לטעון את ספריית התלת־ממד. נסו לרענן את הדף.'); return; }
+if (!window.THREE || !G || !G.initRenderer) { fail('לא הצלחתי לטעון את קבצי המשחק. בדקו שכל הקבצים הועלו, ונסו לרענן את הדף.'); return; }
+const V3 = THREE.Vector3;
 try { G.initRenderer(stage); }
 catch (e) { fail('הדפדפן הזה לא מאפשר גרפיקה תלת־ממדית (WebGL). נסו בכרום או בספארי מעודכנים, או הפעילו "האצת חומרה" בהגדרות הדפדפן.'); return; }
 stage.insertBefore(G.renderer.domElement, stage.firstChild);

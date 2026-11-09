@@ -1,6 +1,6 @@
 // טוסטי הגיבור — service worker: keeps the game playable offline after the first visit.
 // After changing any game file, bump VERSION so installed copies pick up the new files.
-const VERSION = 'toasty-v1';
+const VERSION = 'toasty-v3';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './engine.js', './meshes.js', './world.js', './main.js',
