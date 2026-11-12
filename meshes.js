@@ -60,11 +60,12 @@ E.jellybean = () => { const g = new THREE.Group(), b = new THREE.Group(); b.posi
   G.outline(M(SPH(.45, 24, 16), G.gloss('#9b5cff'), 0, 0, 0, b), .05).scale.set(1.35, .9, .9);
   M(SPH(.12, 10, 8), G.mat('#ffffff', .1), -.25, .25, .25, b, false).scale.set(1.6, .5, .5);
   G.face(b, { y: .05, z: .38, s: .85, mood: 'angry' }); g.userData.bob = b; return wrap(g, .6, 1); };
-E.candycorn = () => { const g = new THREE.Group(), b = new THREE.Group(); b.position.y = .7; g.add(b);
-  [['#fff3d6', .38, .1], ['#ff9f2e', .3, -.25], ['#ffd23f', .2, -.55]].forEach(([c, r, y], i) => M(CYL(r - .08, r, .34, 20), G.gloss(c), 0, y + .2 - i * .03, 0, b));
-  G.outline(M(new THREE.ConeGeometry(.42, 1.2, 20), G.gloss('#ffd23f'), 0, -.1, 0, b), .03).rotation.x = Math.PI;
-  const wings = [-1, 1].map(s => { const w = M(SPH(.3, 12, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: .7, roughness: .2 }), s * .45, .25, -.1, b, false); w.scale.set(1, .15, .55); return w; });
-  G.face(b, { y: .1, z: .3, s: .75, mood: 'angry', cheeks: false }); g.userData.bob = b; g.userData.wings = wings; return wrap(g, .55, 1.3); };
+E.candycorn = () => { const g = new THREE.Group(), b = new THREE.Group(); b.position.y = .2; g.add(b);
+  G.outline(M(CYL(.3, .44, .42, 20), G.gloss('#ffd23f'), 0, .21, 0, b), .04);
+  G.outline(M(CYL(.17, .3, .42, 20), G.gloss('#ff8a1e'), 0, .63, 0, b), .04);
+  G.outline(M(new THREE.ConeGeometry(.17, .36, 20), G.gloss('#fff6e6'), 0, 1.02, 0, b), .05);
+  const wings = [-1, 1].map(s => { const w = M(SPH(.3, 12, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: .75, roughness: .2 }), s * .5, .7, -.1, b, false); w.scale.set(1, .15, .55); return w; });
+  G.face(b, { y: .5, z: .33, s: .8, mood: 'angry', cheeks: false }); g.userData.bob = b; g.userData.wings = wings; return wrap(g, .55, 1.4); };
 E.sponge = () => { const g = new THREE.Group(), b = new THREE.Group(); g.add(b);
   G.outline(M(G.RB(1.1, .75, .7, .12, 3), G.mat('#ffdd55', .9), 0, .45, 0, b), .03);
   M(G.RB(1.12, .22, .72, .08, 2), G.mat('#3fae5a', .9), 0, .92, 0, b);
@@ -98,8 +99,10 @@ E.popsicle = () => { const g = new THREE.Group(), b = new THREE.Group(); g.add(b
   M(G.RB(.72, .3, .42, .14, 2), G.gloss('#ffd1e3'), 0, 1.55, 0, b);
   G.face(b, { y: 1.15, z: .21, s: .8, mood: 'angry' }); g.userData.bob = b; return wrap(g, .5, 1.75); };
 E.icecube = () => { const g = new THREE.Group(), b = new THREE.Group(); b.position.y = .5; g.add(b);
-  G.outline(M(G.RB(.9, .9, .9, .15, 3), G.mat('#bfeaff', .05, { metalness: .1, envMapIntensity: 1.6, transparent: true, opacity: .85 }), 0, 0, 0, b), .04);
-  G.face(b, { y: .05, z: .46, s: .9, mood: 'angry', cheeks: false }); g.userData.bob = b; return wrap(g, .6, 1); };
+  G.outline(M(G.RB(.9, .9, .9, .16, 3), G.mat('#bfe9ff', .06, { envMapIntensity: 1.5 }), 0, 0, 0, b), .04);
+  M(G.RB(.6, .6, .6, .12, 2), G.mat('#e9f8ff', .1, { transparent: true, opacity: .55 }), .04, .04, .13, b, false);
+  const hl = M(G.RB(.1, .32, .02, .01, 1), G.basic('#ffffff'), -.3, .2, .46, b, false); hl.rotation.z = .5;
+  G.face(b, { y: 0, z: .46, s: .9, mood: 'angry', cheeks: false }); g.userData.bob = b; return wrap(g, .6, 1); };
 E.snowball = () => { const g = new THREE.Group(), b = new THREE.Group(); b.position.y = .65; g.add(b);
   G.outline(M(SPH(.65, 24, 16), G.mat('#ffffff', .9), 0, 0, 0, b), .04);
   G.face(b, { y: .1, z: .6, mood: 'angry' }); g.userData.bob = b; g.userData.roll = true; return wrap(g, .7, 1.3); };
@@ -122,7 +125,7 @@ E.saucebottle = () => { const g = new THREE.Group(), b = new THREE.Group(); g.ad
 E.olive = () => { const g = new THREE.Group(), b = new THREE.Group(); b.position.y = .62; g.add(b);
   G.outline(M(SPH(.5, 26, 18), G.gloss('#7d9a2c'), 0, 0, 0, b), .045).scale.set(.9, 1.15, .9);
   const p = M(SPH(.2, 16, 10), G.gloss('#e8392e'), 0, .55, 0, b); p.scale.set(1, .55, 1);
-  [-1, 1].forEach(s => M(SPH(.12, 10, 8), G.mat('#3b4a1a', .5), s * .22, -.58, .05, g));
+  [-1, 1].forEach(s => M(SPH(.13, 10, 8), G.mat('#3b4a1a', .5), s * .22, .07, .08, g).scale.set(1, .6, 1.3));
   G.face(b, { y: .05, z: .44, s: .9, mood: 'sour' }); g.userData.bob = b; return wrap(g, .55, 1.25); };
 function pineTex() { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
   x.fillStyle = '#f2b632'; x.fillRect(0, 0, 128, 128); x.strokeStyle = '#a8701a'; x.lineWidth = 5;
@@ -148,7 +151,7 @@ F.onion = () => { const g = new THREE.Group(); const pts = []; for (let i = 0; i
   pts.push(new THREE.Vector2(.001, .75));
   G.outline(M(new THREE.LatheGeometry(pts, 28), G.gloss('#e8b45a'), 0, 0, 0, g), .05);
   for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; const s = M(new THREE.TorusGeometry(.42, .012, 4, 24, Math.PI), G.mat('#c98a3a', .5), 0, 0, 0, g, false); s.rotation.set(0, a, Math.PI / 2); s.scale.set(1.25, 1, 1); }
-  [-.08, .08, 0].forEach((x, i) => { const l = M(new THREE.ConeGeometry(.06, .55, 6), G.gloss('#5ab84a'), x, .95 + (i === 2 ? .1 : 0), 0, g); l.rotation.z = x * 3; });
+  [[-.1, .4], [.1, -.4], [0, 0]].forEach(([x, rz], i) => { const l = M(CYL(.014, .045, .5 + (i === 2 ? .14 : 0), 6), G.gloss('#5ab84a'), x, .96 + (i === 2 ? .07 : 0), 0, g); l.rotation.z = rz; });
   for (let i = 0; i < 4; i++) M(CYL(.012, .012, .2, 4), G.mat('#e8d2b0', .6), (i - 1.5) * .06, -.62, 0, g, false);
   G.face(g, { y: .05, z: .47, s: .85, mood: 'worried' }); return g; };
 F.cupcake = () => { const g = new THREE.Group();
@@ -159,17 +162,22 @@ F.teacup = () => { const g = new THREE.Group();
   G.outline(M(CYL(.48, .35, .6, 24), G.gloss('#ffffff'), 0, 0, 0, g), .04); M(CYL(.44, .44, .02, 24), G.mat('#a4652f', .3), 0, .28, 0, g);
   M(new THREE.TorusGeometry(.18, .05, 8, 16), G.gloss('#ffffff'), .5, 0, 0, g); M(CYL(.7, .6, .06, 24), G.gloss('#bfe3ff'), 0, -.32, 0, g);
   G.face(g, { y: 0, z: .45, s: .8, mood: 'worried' }); return g; };
-F.strawberry = () => { const g = new THREE.Group(); const pts = []; for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(Math.max(.001, Math.sin(t * Math.PI * .85) * .5 * (t < .5 ? t * 2 : 1)), t * .9 - .5)); }
+F.strawberry = () => { const g = new THREE.Group(), R = t => .5 * Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(t, 1.6))), .8), Y = t => t - .55, rnd = G.rng(3);
+  const pts = []; for (let i = 0; i <= 18; i++) { const t = i / 18; pts.push(new THREE.Vector2(Math.max(.001, R(t)), Y(t))); }
   G.outline(M(new THREE.LatheGeometry(pts, 24), G.gloss('#e8263a'), 0, 0, 0, g), .05);
-  for (let i = 0; i < 5; i++) { const l = M(SPH(.14, 10, 6), G.gloss('#3f9a3a'), Math.cos(i * TAU / 5) * .17, .42, Math.sin(i * TAU / 5) * .17, g); l.scale.set(1, .25, .5); l.rotation.y = -i * TAU / 5; }
-  G.face(g, { y: .05, z: .42, s: .8, mood: 'worried' }); return g; };
+  for (let i = 0; i < 30; i++) { const t = .15 + rnd() * .68, a = rnd() * TAU; if (Math.abs(a - Math.PI / 2) < .7 && t > .45) continue;
+    const sd = M(SPH(.03, 6, 4), G.mat('#ffe27a', .4), Math.cos(a) * R(t), Y(t), Math.sin(a) * R(t), g, false); sd.scale.set(1, 1.5, 1); }
+  for (let i = 0; i < 6; i++) { const l = M(SPH(.16, 10, 6), G.gloss('#3f9a3a'), Math.cos(i * TAU / 6) * .17, .38, Math.sin(i * TAU / 6) * .17, g); l.scale.set(1, .22, .5); l.rotation.y = -i * TAU / 6; }
+  M(CYL(.03, .03, .16, 6), G.mat('#3f7a2a', .6), 0, .48, 0, g);
+  G.face(g, { y: .1, z: .47, s: .8, mood: 'worried' }); return g; };
 F.scoop = () => { const g = new THREE.Group();
   G.outline(M(new THREE.ConeGeometry(.32, .7, 16), G.mat('#e0a35a', .7), 0, -.45, 0, g), .04).rotation.x = Math.PI;
   G.outline(M(SPH(.42, 20, 14), G.gloss('#ffc4dc'), 0, .05, 0, g), .04); G.face(g, { y: .08, z: .4, s: .8, mood: 'worried' }); return g; };
-F.avocado = () => { const g = new THREE.Group(); const pts = []; for (let i = 0; i <= 18; i++) { const t = i / 18, y = -.6 * Math.cos(Math.PI * t); pts.push(new THREE.Vector2(Math.max(.001, .45 * Math.sin(Math.PI * t) * (1 - .25 * y / .6)), y)); }
-  G.outline(M(new THREE.LatheGeometry(pts, 24), G.gloss('#4e8a2a'), 0, 0, 0, g), .05);
-  const face = M(SPH(.36, 20, 14), G.mat('#d9f08a', .5), 0, -.05, .14, g); face.scale.set(1, 1.25, .5);
-  M(SPH(.15, 14, 10), G.gloss('#7a4a24'), 0, -.2, .3, g); G.face(g, { y: .18, z: .32, s: .7, mood: 'worried', cheeks: false }); return g; };
+F.avocado = () => { const g = new THREE.Group(); const pts = []; for (let i = 0; i <= 18; i++) { const t = i / 18, y = -.6 * Math.cos(Math.PI * t); pts.push(new THREE.Vector2(Math.max(.001, .46 * Math.sin(Math.PI * t) * (1 - .28 * y / .6)), y)); }
+  const body = G.outline(M(new THREE.LatheGeometry(pts, 24), G.gloss('#3f7a26'), 0, 0, 0, g), .05); body.scale.z = .7;
+  const flesh = M(SPH(.4, 24, 16), G.mat('#dff08e', .5), 0, -.06, .2, g, false); flesh.scale.set(.92, 1.22, .42);
+  M(SPH(.17, 16, 12), G.gloss('#8a5326'), 0, -.2, .33, g, false);
+  G.face(g, { y: .22, z: .36, s: .62, mood: 'worried', cheeks: false }); return g; };
 
 /* bubble around rescued friends */
 G.bubbleMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { t: { value: 0 } },
@@ -180,15 +188,27 @@ G.bubbleMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, u
 G.itemParts = (kind) => {
   const T = (geo, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0) => { geo.scale(sx, sy, sz); if (rx) geo.rotateX(rx); geo.translate(x, y, z); return geo; };
   switch (kind) {
-    case 'pepperoni': { const spots = [[.15, .12], [-.14, .05], [.02, -.17], [-.05, .2]].map(([x, y]) => CYL(.06, .06, .14, 10).rotateX(Math.PI / 2).translate(x, y, 0));
-      const merged = THREE.BufferGeometryUtils ? THREE.BufferGeometryUtils.mergeBufferGeometries(spots) : spots[0];
-      return [{ geo: CYL(.42, .42, .1, 28).rotateX(Math.PI / 2), mat: G.gloss('#c2362b') }, { geo: merged, mat: G.mat('#7e1c14', .5) }]; }
+    case 'pepperoni': {
+      const S = 128, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), rnd = G.rng(5);
+      const gr = x.createRadialGradient(64, 64, 6, 64, 64, 64); gr.addColorStop(0, '#cc4a2e'); gr.addColorStop(.75, '#b53622'); gr.addColorStop(1, '#8a2014'); x.fillStyle = gr; x.fillRect(0, 0, S, S);
+      const dots = (n, col, r0, r1) => { x.fillStyle = col; for (let i = 0; i < n; i++) { const a = rnd() * 6.3, d = Math.sqrt(rnd()) * 56; x.beginPath(); x.ellipse(64 + Math.cos(a) * d, 64 + Math.sin(a) * d, r0 + rnd() * (r1 - r0), (r0 + rnd() * (r1 - r0)) * .75, rnd() * 3, 0, 7); x.fill(); } };
+      dots(7, 'rgba(255,150,80,.3)', 7, 12); dots(55, 'rgba(255,218,196,.9)', 1.6, 4.2); dots(40, 'rgba(96,22,14,.55)', 1, 2.4);
+      const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding;
+      const face = new THREE.MeshStandardMaterial({ map: tx, roughness: .32, envMapIntensity: .9 }), edge = G.gloss('#8f2417');
+      return [{ geo: CYL(.44, .44, .07, 32).rotateX(Math.PI / 2), mat: [edge, face, face] }, { geo: new THREE.TorusGeometry(.44, .05, 8, 32), mat: edge }]; }
     case 'olive': return [{ geo: T(SPH(.3, 20, 14), 0, 0, 0, 1, 1.25, 1), mat: G.gloss('#7d9a2c') }, { geo: T(SPH(.12, 12, 8), 0, .34, 0, 1, .5, 1), mat: G.gloss('#e8392e') }];
     case 'candy': return [{ geo: T(SPH(.28, 20, 14), 0, 0, 0, 1.25, .9, .9), mat: G.gloss('#ff4fa0') }, { geo: new THREE.ConeGeometry(.2, .3, 10).scale(1, 1, .5).rotateZ(Math.PI / 2).translate(.42, 0, 0), mat: G.gloss('#ffd23f') }, { geo: new THREE.ConeGeometry(.2, .3, 10).scale(1, 1, .5).rotateZ(-Math.PI / 2).translate(-.42, 0, 0), mat: G.gloss('#ffd23f') }];
-    case 'sugar': return [{ geo: G.RB(.5, .5, .5, .06, 2), mat: G.mat('#ffffff', .85) }];
+    case 'sugar': { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), rnd = G.rng(9);
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, 64, 64);
+      for (let i = 0; i < 260; i++) { x.fillStyle = rnd() < .5 ? 'rgba(170,190,215,.5)' : 'rgba(215,225,240,.8)'; x.fillRect(rnd() * 64, rnd() * 64, 1.5 + rnd() * 2, 1.5 + rnd() * 2); }
+      const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding;
+      return [{ geo: G.RB(.56, .56, .56, .07, 2), mat: new THREE.MeshStandardMaterial({ map: tx, roughness: .6, envMapIntensity: .8 }) }]; }
     case 'blueberry': return [{ geo: SPH(.3, 20, 14), mat: G.gloss('#3b4fa8') }, { geo: T(CYL(.1, .12, .06, 5), 0, .3, 0), mat: G.mat('#1c254f', .6) }];
     case 'cherry': return [{ geo: SPH(.3, 20, 14), mat: G.gloss('#d4142a') }, { geo: T(CYL(.025, .025, .5, 6), .08, .4, 0), mat: G.mat('#3f7a2a', .6) }];
-    case 'corn': return [{ geo: T(SPH(.28, 18, 12), 0, 0, 0, 1, 1.2, .8), mat: G.gloss('#ffcf2e') }, { geo: T(SPH(.12, 10, 8), 0, -.28, 0), mat: G.mat('#fff4d0', .5) }];
+    case 'corn': { const k = SPH(.3, 18, 12), p = k.attributes.position;
+      for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setXYZ(i, p.getX(i) * (1.05 + y * 1.3), y * 1.2 - Math.max(0, y - .18) * .5, p.getZ(i) * (.55 + y * .5)); }
+      k.computeVertexNormals();
+      return [{ geo: k, mat: G.gloss('#ffc21a') }, { geo: T(SPH(.11, 10, 8), 0, -.33, 0, 1, 1.1, .7), mat: G.mat('#fff3cf', .5) }, { geo: T(SPH(.07, 8, 6), -.12, .14, .19, 1.6, .8, .4), mat: G.basic('#fff6c0') }]; }
   }
 };
 G.chiliMesh = () => { const g = new THREE.Group(); const m = G.mat('#e8262c', .15, { emissive: '#ff3a00', emissiveIntensity: .4 });
