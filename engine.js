@@ -54,9 +54,29 @@ G.initRenderer = (host) => {
   scene.add(sun); scene.add(sun.target);
   G.skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, bot: { value: new THREE.Color() } },
-    vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; varying vec3 vP; void main(){ float h=vP.y; vec3 c=h>0.? mix(mid,top,pow(h,.75)) : mix(mid,bot,min(1.,-h*2.5)); gl_FragColor=linearToOutputTexel(vec4(c,1.)); }'
+    uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, bot: { value: new THREE.Color() },
+      sunDir: { value: new THREE.Vector3(12, 22, 9).normalize() }, sunCol: { value: new THREE.Color(1, 1, 1) }, cloudCol: { value: new THREE.Color(1, 1, 1) },
+      time: { value: 0 }, cloudOn: { value: 1 } },
+    vertexShader: 'varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+    fragmentShader: `uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir; uniform vec3 sunCol; uniform vec3 cloudCol; uniform float time; uniform float cloudOn;
+      varying vec3 vP;
+      float hash(vec3 p){ p=fract(p*.3183099+.1); p*=17.; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+      float noise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.-2.*f);
+        return mix(mix(mix(hash(i),hash(i+vec3(1.,0.,0.)),f.x),mix(hash(i+vec3(0.,1.,0.)),hash(i+vec3(1.,1.,0.)),f.x),f.y),
+                   mix(mix(hash(i+vec3(0.,0.,1.)),hash(i+vec3(1.,0.,1.)),f.x),mix(hash(i+vec3(0.,1.,1.)),hash(i+vec3(1.,1.,1.)),f.x),f.y),f.z); }
+      float fbm(vec3 p){ float a=.5, s=0.; for(int i=0;i<4;i++){ s+=a*noise(p); p*=2.03; a*=.5; } return s; }
+      void main(){ vec3 d=normalize(vP); float h=d.y;
+        vec3 c=h>0.? mix(mid,top,pow(h,.75)) : mix(mid,bot,min(1.,-h*2.5));
+        float s=max(dot(d,sunDir),0.);
+        c+=sunCol*(pow(s,600.)*4.+pow(s,24.)*.18);
+        c+=sunCol*pow(1.-abs(h),10.)*.06;
+        if(cloudOn>.5 && h>-.02){
+          float n=fbm(d*vec3(3.,9.,3.)+vec3(time*.012,0.,time*.006));
+          float band=smoothstep(-.02,.07,h)*(1.-smoothstep(.3,.7,h));
+          float cl=smoothstep(.5,.68,n)*band;
+          c=mix(c,mix(cloudCol*.84,cloudCol,smoothstep(.55,.8,n)),cl*.92);
+        }
+        gl_FragColor=linearToOutputTexel(vec4(c,1.)); }`
   });
   G.sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), G.skyMat); G.sky.frustumCulled = false; scene.add(G.sky);
   scene.fog = new THREE.Fog(0xffffff, 60, 190);
@@ -65,7 +85,8 @@ G.initRenderer = (host) => {
   addEventListener('resize', G.resize);
 };
 
-G.setSky = (top, mid, bot, fog, sunColor, hemiSky, hemiGround) => {
+G.setSky = (top, mid, bot, fog, sunColor, hemiSky, hemiGround, cloud = '#ffffff') => {
+  G.skyMat.uniforms.cloudCol.value.copy(G.C(cloud)); G.skyMat.uniforms.sunCol.value.copy(G.C(sunColor));
   G.skyMat.uniforms.top.value.copy(G.C(top)); G.skyMat.uniforms.mid.value.copy(G.C(mid)); G.skyMat.uniforms.bot.value.copy(G.C(bot));
   G.scene.fog.color.copy(G.C(fog));
   G.sun.color.copy(G.C(sunColor)); G.hemi.color.copy(G.C(hemiSky)); G.hemi.groundColor.copy(G.C(hemiGround));
@@ -87,6 +108,7 @@ const QUALITY = {
 G.quality = 'medium';
 G.setQuality = (q) => {
   G.quality = q; const Q = QUALITY[q], r = G.renderer;
+  G.skyMat.uniforms.cloudOn.value = q === 'low' ? 0 : 1;
   r.setPixelRatio(Math.min(Q.pr, devicePixelRatio || 1));
   r.shadowMap.enabled = Q.shadows; G.sun.castShadow = Q.shadows;
   if (G.sun.shadow.map) { G.sun.shadow.map.dispose(); G.sun.shadow.map = null; }
@@ -101,7 +123,7 @@ G.setQuality = (q) => {
       else rt = new THREE.WebGLRenderTarget(4, 4, opts);
       const c = new THREE.EffectComposer(r, rt);
       c.addPass(new THREE.RenderPass(G.scene, G.camera));
-      c.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), .45, .4, 1.9));
+      c.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), .2, .35, 2.2));
       c.addPass(new THREE.ShaderPass({
         uniforms: { tDiffuse: { value: null }, exposure: { value: .9 / .6 } },
         vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
@@ -111,6 +133,7 @@ G.setQuality = (q) => {
             mat3 mI=mat3(0.59719,0.07600,0.02840, 0.35458,0.90834,0.13383, 0.04823,0.01566,0.83777);
             mat3 mO=mat3(1.60475,-0.10208,-0.00327, -0.53108,1.10813,-0.07276, -0.07367,-0.00605,1.07602);
             c=clamp(mO*fit(mI*c),0.,1.);
+            float lum=dot(c,vec3(.2126,.7152,.0722)); c=clamp(mix(vec3(lum),c,1.12),0.,1.);
             float d=distance(vUv,vec2(.5)); c*=1.-smoothstep(.55,1.,d)*.25;
             c=mix(c*12.92,1.055*pow(c,vec3(1./2.4))-.055,step(.0031308,c));
             gl_FragColor=vec4(c,1.); }`
@@ -128,7 +151,7 @@ G.resize = () => {
   if (G.composer) { G.composer.setPixelRatio(G.renderer.getPixelRatio()); G.composer.setSize(w, h); }
   if (G.particles) G.particles.forEach(p => p.material.uniforms.scale.value = h * G.renderer.getPixelRatio() * .5);
 };
-G.render = () => { if (G.composer) G.composer.render(); else G.renderer.render(G.scene, G.camera); };
+G.render = () => { G.sky.position.copy(G.camera.position); if (G.composer) G.composer.render(); else G.renderer.render(G.scene, G.camera); };
 
 /* ---------- particles: two pooled point clouds (soft + glowing) ---------- */
 function makeParticles(n, additive) {
@@ -145,7 +168,7 @@ function makeParticles(n, additive) {
     fragmentShader: 'uniform sampler2D map; varying vec3 vC; varying float vA; void main(){ vec4 t=texture2D(map,gl_PointCoord); gl_FragColor=linearToOutputTexel(vec4(vC,t.a*vA)); }'
   });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; G.scene.add(pts);
-  pts.userData = { n, i: 0, life: new Float32Array(n), max: new Float32Array(n), vel: new Float32Array(n * 3), grav: new Float32Array(n), s0: new Float32Array(n), s1: new Float32Array(n), drag: new Float32Array(n) };
+  pts.userData = { n, i: 0, life: new Float32Array(n), max: new Float32Array(n), vel: new Float32Array(n * 3), grav: new Float32Array(n), s0: new Float32Array(n), s1: new Float32Array(n), drag: new Float32Array(n), amax: new Float32Array(n) };
   return pts;
 }
 G.initParticles = () => { G.soft = makeParticles(500, false); G.glowP = makeParticles(400, true); G.particles = [G.soft, G.glowP]; G.resize(); };
@@ -160,7 +183,7 @@ G.emit = (x, y, z, o = {}) => {
     a.position.array[i * 3] = x + (o.spread || 0) * (Math.random() - .5); a.position.array[i * 3 + 1] = y + (o.spreadY || 0) * Math.random(); a.position.array[i * 3 + 2] = z + (o.spread || 0) * (Math.random() - .5);
     D.vel[i * 3] = Math.cos(ang) * sp * (o.ring ? 1 : ring + .3); D.vel[i * 3 + 1] = up * (.5 + Math.random() * .7) + (o.vy || 0); D.vel[i * 3 + 2] = Math.sin(ang) * sp * (o.ring ? 1 : ring + .3);
     D.life[i] = D.max[i] = (o.life || .7) * (.7 + Math.random() * .5); D.grav[i] = o.grav ?? 4; D.drag[i] = o.drag ?? 2;
-    D.s0[i] = o.size || .5; D.s1[i] = o.size1 ?? (o.size || .5) * 1.8;
+    D.s0[i] = o.size || .5; D.s1[i] = o.size1 ?? (o.size || .5) * 1.8; D.amax[i] = o.alpha ?? 1;
     a.pcolor.array[i * 3] = _c.r; a.pcolor.array[i * 3 + 1] = _c.g; a.pcolor.array[i * 3 + 2] = _c.b;
   }
 };
@@ -173,7 +196,7 @@ G.updateParticles = (dt) => {
       const dr = Math.exp(-D.drag[i] * dt);
       D.vel[i * 3] *= dr; D.vel[i * 3 + 2] *= dr; D.vel[i * 3 + 1] = D.vel[i * 3 + 1] * dr - D.grav[i] * dt;
       pos[i * 3] += D.vel[i * 3] * dt; pos[i * 3 + 1] += D.vel[i * 3 + 1] * dt; pos[i * 3 + 2] += D.vel[i * 3 + 2] * dt;
-      a.alpha.array[i] = Math.min(1, k * 2.2); a.size.array[i] = D.s1[i] + (D.s0[i] - D.s1[i]) * k;
+      a.alpha.array[i] = Math.min(1, k * 2.2, (1 - k) * 8 + .1) * D.amax[i]; a.size.array[i] = D.s1[i] + (D.s0[i] - D.s1[i]) * k;
     }
     a.position.needsUpdate = a.alpha.needsUpdate = a.size.needsUpdate = a.pcolor.needsUpdate = true;
   }

@@ -15,7 +15,7 @@ G.THEMES = [
     music: { bpm: 132, wave: 'triangle', mel: [523, 0, 659, 784, 659, 0, 523, 587, 659, 0, 587, 523, 440, 0, 494, 523], bass: [131, 131, 175, 175, 147, 147, 196, 196] } },
   { id: 'candy', name: 'ארץ הממתקים', blurb: 'עוגיות, מרשמלו ונהר של שוקולד',
     sky: ['#7fb6ff', '#ffd0ec', '#fff0f8'], fog: '#ffe0f2', sun: '#fff4f0', hemi: ['#fff0fa', '#c08aa8'],
-    sea: '#6b3a22', seaRough: .12, top: '#ffe3f0', side: '#c98a5a', rim: '#ff7ab8', plats: [['#7a4a2a', '#5a321c'], ['#ffffff', '#ffd0ec']],
+    cloud: '#ffe3f3', sea: '#6b3a22', seaRough: .12, top: '#ffe3f0', side: '#c98a5a', rim: '#ff7ab8', plats: [['#7a4a2a', '#5a321c'], ['#ffffff', '#ffd0ec']],
     item: 'candy', itemName: 'סוכריות', friend: 'cupcake', friendName: 'קאפקייקי', enemies: ['gummy', 'jellybean', 'candycorn'],
     boss: 'lollipop', bossName: 'מלך הסוכריות', bossHint: 'הוא קופץ ויוצר גלי הלם — קפצו מעליהם! כשהוא מסוחרר, תקפו.',
     music: { bpm: 140, wave: 'square', mel: [784, 659, 784, 880, 784, 0, 659, 587, 523, 587, 659, 784, 659, 0, 587, 0], bass: [196, 196, 165, 165, 175, 175, 147, 147] } },
@@ -39,7 +39,7 @@ G.THEMES = [
     music: { bpm: 112, wave: 'sine', mel: [880, 0, 784, 659, 784, 0, 659, 587, 659, 0, 523, 0, 587, 659, 523, 0], bass: [220, 220, 175, 175, 196, 196, 165, 165] } },
   { id: 'spicy', name: 'הר הצ׳ילי', blurb: 'נאצ׳וס, טורטיות וים של סלסה רותחת',
     sky: ['#4a2a6a', '#ff9a6b', '#ffd2a0'], fog: '#ffb88a', sun: '#ffd0a0', hemi: ['#ffd8b0', '#8a3a3a'],
-    sea: '#ff5a1e', seaRough: .3, seaGlow: .8, top: '#f2c46d', side: '#d9a04a', rim: '#b87a2a', plats: [['#ffcf5a', '#e0a030'], ['#7a3a1a', '#5a2a12']],
+    cloud: '#ffb48a', sea: '#ff5a1e', seaRough: .3, seaGlow: .8, top: '#f2c46d', side: '#d9a04a', rim: '#b87a2a', plats: [['#ffcf5a', '#e0a030'], ['#7a3a1a', '#5a2a12']],
     item: 'corn', itemName: 'גרעיני תירס', friend: 'avocado', friendName: 'אבוקדון', enemies: ['chili', 'jalapeno', 'saucebottle'],
     boss: 'hotsauce', bossName: 'הרוטב הלוהט', bossHint: 'הבוס האחרון משלב הכול: הסתערות, גלי הלם, גשם אש וקרן להבה!',
     music: { bpm: 148, wave: 'square', mel: [587, 0, 587, 698, 0, 587, 523, 0, 466, 0, 523, 587, 698, 784, 698, 0], bass: [147, 147, 147, 117, 117, 131, 131, 110] } }
@@ -56,27 +56,108 @@ const BOSS_DEF = {
   hotsauce: { hp: 5, cycles: [['charge', 'slam', 'rain'], ['sweep', 'charge', 'rain', 'slam']], shot: 'fire', mode: 'lob', speed: 16 }
 };
 
+/* gentle things floating in the air of each world */
+const AMBIENT = {
+  pizza: { rate: 5, y0: -1, yr: 4, o: { n: 1, color: '#ffffff', speed: .3, up: .7, grav: -.3, size: 1.2, size1: 2.8, life: 4.5, drag: .2, alpha: .22 } },
+  candy: { rate: 9, y0: 0, yr: 9, o: { n: 1, color: '#ffd0ec', glow: true, speed: .25, up: .15, grav: .05, size: .32, size1: .1, life: 3.2, drag: .2, alpha: .95 } },
+  kitchen: { rate: 7, y0: -2, yr: 5, o: { n: 1, color: '#ffffff', speed: .3, up: 1, grav: -.2, size: .5, size1: .7, life: 4.5, drag: .2, alpha: .5 } },
+  breakfast: { rate: 8, y0: 0, yr: 9, o: { n: 1, color: '#ffe6a0', glow: true, speed: .2, up: .2, grav: .05, size: .3, size1: .1, life: 3.5, drag: .2, alpha: .9 } },
+  icecream: { rate: 22, y0: 5, yr: 9, o: { n: 1, color: '#ffffff', speed: .5, up: -1.4, grav: .3, size: .28, size1: .28, life: 6, drag: .1, alpha: .9 } },
+  spicy: { rate: 12, y0: -4, yr: 5, o: { n: 1, color: '#ff8a3c', glow: true, bright: 1.6, speed: .5, up: 1.6, grav: -.5, size: .3, size1: .08, life: 4, drag: .15 } }
+};
 let L = null;
 G.ev = {};
 const say = (k, ...a) => G.ev[k] && G.ev[k](...a);
 
 /* ================= LEVEL BUILDING ================= */
 function seaMaterial(T) {
-  const m = new THREE.MeshStandardMaterial({ color: G.C(T.sea), roughness: T.seaRough, metalness: .05, envMapIntensity: 1 });
+  const m = new THREE.MeshStandardMaterial({ color: G.C(T.sea), roughness: T.seaRough, metalness: .05, envMapIntensity: 1.1 });
   if (T.seaGlow) { m.emissive = G.C(T.sea); m.emissiveIntensity = T.seaGlow; }
-  m.onBeforeCompile = sh => { sh.uniforms.uTime = G.seaTime; sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>',
-    '#include <begin_vertex>\n transformed.z += sin(position.x*.07+uTime*.9)*.45 + cos(position.y*.09+uTime*1.2)*.35;'); };
+  m.onBeforeCompile = sh => { sh.uniforms.uTime = G.seaTime;
+    sh.vertexShader = 'uniform float uTime; varying vec2 vSea; varying vec3 vTx; varying vec3 vTy;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n vSea = position.xy; vTx = normalMatrix * vec3(1.,0.,0.); vTy = normalMatrix * vec3(0.,1.,0.);\n transformed.z += sin(position.x*.07+uTime*.9)*.45 + cos(position.y*.09+uTime*1.2)*.35;');
+    sh.fragmentShader = 'uniform float uTime; varying vec2 vSea; varying vec3 vTx; varying vec3 vTy;\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float sw = sin(vSea.x*.22+uTime*.7+sin(vSea.y*.15)*2.)*sin(vSea.y*.19-uTime*.5+sin(vSea.x*.13)*2.);
+        diffuseColor.rgb *= 1. + sw*.08;
+        float f1 = sin(vSea.x*.31+uTime*.5+sin(vSea.y*.21)*1.7), f2 = sin(vSea.y*.27-uTime*.4+sin(vSea.x*.17+1.3)*1.9);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.), smoothstep(.75, 1., f1*f2)*.13);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        float rx = cos(vSea.x*.9+vSea.y*.3+uTime*1.6)*.09 + cos(vSea.x*.31-uTime*.8)*.05;
+        float ry = sin(vSea.y*1.0-vSea.x*.4+uTime*1.3)*.09 + sin(vSea.y*.27+uTime*.7)*.05;
+        normal = normalize(normal - normalize(vTx)*rx - normalize(vTy)*ry);`); };
   return m;
+}
+
+/* ---------- painted textures: every world gets its own island top ---------- */
+const texCache = {}, sideCache = {};
+const DRIP = { pizza: '#ffd164', candy: '#ff7ab8', kitchen: null, breakfast: '#b8661c', icecream: '#ff9cc6', spicy: '#ffb52e' };
+const PLAT_DOT = { pizza: ['#b8782f', '#e8943a'], candy: ['#3a2012', '#ff5fa2'], kitchen: ['#c9d2dc', '#5a6170'], breakfast: ['#8a4a12', '#ffd95a'], icecream: ['#ffffff', '#5a341e'], spicy: ['#c9472a', '#ffcf5a'] };
+function topMaterial(T) {
+  if (texCache[T.id]) return texCache[T.id];
+  const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), rnd = G.rng(99 + T.id.length * 7);
+  const blot = (n, cols, r0, r1, a) => { for (let i = 0; i < n; i++) { x.globalAlpha = a * (.5 + rnd() * .5); x.fillStyle = cols[Math.floor(rnd() * cols.length)];
+    x.beginPath(); x.ellipse(rnd() * S, rnd() * S, r0 + rnd() * (r1 - r0), (r0 + rnd() * (r1 - r0)) * (.6 + rnd() * .4), rnd() * 3, 0, 7); x.fill(); } x.globalAlpha = 1; };
+  const rrect = (a, b, w, h, r) => { x.beginPath(); if (x.roundRect) x.roundRect(a, b, w, h, r); else x.rect(a, b, w, h); x.fill(); };
+  const spiral = (col, w, a0, turns, step) => { x.strokeStyle = col; x.lineWidth = w; x.lineCap = 'round'; x.beginPath(); for (let a = a0; a < a0 + turns; a += .08) { const q = (a - a0) * step; x.lineTo(S / 2 + Math.cos(a) * q, S / 2 + Math.sin(a) * q); } x.stroke(); };
+  x.fillStyle = T.top; x.fillRect(0, 0, S, S);
+  switch (T.id) {
+    case 'pizza':
+      blot(60, ['#ffe08a', '#ffc94a', '#f7b93a'], 14, 46, .55); blot(40, ['#e8943a', '#d9812a'], 4, 14, .5); blot(140, ['#3f8a3a', '#5aa04a'], 1.5, 3.5, .8);
+      x.strokeStyle = '#cf3b27'; x.lineWidth = 26; x.beginPath(); x.arc(S / 2, S / 2, S / 2 - 12, 0, 7); x.stroke();
+      x.strokeStyle = '#ffd164'; x.lineWidth = 12; x.beginPath(); for (let a = 0; a <= 6.35; a += .05) { const q = S / 2 - 31 + Math.sin(a * 11) * 6; x.lineTo(S / 2 + Math.cos(a) * q, S / 2 + Math.sin(a) * q); } x.stroke();
+      break;
+    case 'candy': { blot(30, ['#fff5fa', '#ffd0e6'], 20, 60, .6); spiral('rgba(255,255,255,.8)', 14, 0, 26, 9.5);
+      const cols = ['#ff5fa2', '#5ecbff', '#ffd23f', '#7be36a', '#b98bff']; x.lineWidth = 6;
+      for (let i = 0; i < 220; i++) { const px = rnd() * S, py = rnd() * S, a = rnd() * 6.3; x.strokeStyle = cols[i % 5]; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * 12, py + Math.sin(a) * 12); x.stroke(); }
+      break; }
+    case 'kitchen':
+      for (let i = 0; i < 90; i++) { x.strokeStyle = `rgba(${120 + rnd() * 40 | 0},${75 + rnd() * 30 | 0},${35 + rnd() * 20 | 0},${.12 + rnd() * .2})`; x.lineWidth = 1 + rnd() * 4; const y0 = rnd() * S;
+        x.beginPath(); x.moveTo(0, y0); for (let px = 0; px <= S; px += 32) x.lineTo(px, y0 + Math.sin(px * .02 + i) * 6); x.stroke(); }
+      for (let i = 0; i < 5; i++) { const cx = rnd() * S, cy = rnd() * S; for (let k = 1; k < 5; k++) { x.strokeStyle = 'rgba(110,65,30,.25)'; x.lineWidth = 2; x.beginPath(); x.ellipse(cx, cy, k * 7, k * 4, 0, 0, 7); x.stroke(); } }
+      x.strokeStyle = 'rgba(255,240,215,.5)'; x.lineWidth = 1.5; for (let i = 0; i < 30; i++) { const px = rnd() * S, py = rnd() * S, a = rnd() * 6.3, l = 30 + rnd() * 70; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke(); }
+      break;
+    case 'breakfast': { const n = 9, cell = S / n;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { x.fillStyle = '#d68f33'; rrect(i * cell + 6, j * cell + 6, cell - 12, cell - 12, 9); x.fillStyle = '#c47a22'; rrect(i * cell + 11, j * cell + 13, cell - 22, cell - 22, 6); }
+      blot(7, ['#a85a14'], 40, 90, .5); break; }
+    case 'icecream':
+      blot(26, ['#ffd3e4', '#d6f0ff', '#ffffff'], 20, 70, .55); x.globalAlpha = .55; spiral('#ff9cc6', 12, 0, 22, 11); spiral('#a8e0ff', 12, 3.1, 22, 11); x.globalAlpha = 1;
+      blot(70, ['#5a341e', '#7a4a2a'], 3, 7, .9); break;
+    case 'spicy':
+      blot(50, ['#f7d48a', '#eab85a'], 14, 50, .5); blot(70, ['#b8742a', '#9a5a1e'], 4, 16, .55); blot(120, ['#7a4a1a'], 1, 3, .7); break;
+  }
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  return texCache[T.id] = new THREE.MeshStandardMaterial({ map: t, roughness: T.id === 'icecream' ? .18 : .5, envMapIntensity: T.id === 'icecream' ? 1.1 : .6 });
+}
+function sideMaterial(T) {
+  if (sideCache[T.id]) return sideCache[T.id];
+  const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'), rnd = G.rng(31);
+  x.fillStyle = T.side; x.fillRect(0, 0, 64, 256);
+  const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, 'rgba(255,255,255,.2)'); g.addColorStop(.35, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.4)'); x.fillStyle = g; x.fillRect(0, 0, 64, 256);
+  for (let i = 0; i < 5; i++) { x.fillStyle = `rgba(0,0,0,${.05 + rnd() * .06})`; x.fillRect(0, 30 + i * 44 + rnd() * 10, 64, 5 + rnd() * 8); }
+  for (let i = 0; i < 60; i++) { x.fillStyle = rnd() < .5 ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.1)'; x.beginPath(); x.arc(rnd() * 64, rnd() * 256, 1 + rnd() * 2.5, 0, 7); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.RepeatWrapping; t.repeat.set(8, 1);
+  const tip = new THREE.MeshStandardMaterial({ color: G.C(T.side).multiplyScalar(.55), roughness: .85, envMapIntensity: .4 });
+  return sideCache[T.id] = { side: new THREE.MeshStandardMaterial({ map: t, roughness: .8, envMapIntensity: .5 }), tip };
+}
+function platDeco(g, r, st) {
+  const U = THREE.BufferGeometryUtils; if (!U) return; const vr = L.vr, geos = [], n = 5 + Math.floor(vr() * 4);
+  for (let i = 0; i < n; i++) { const a = vr() * TAU, d = Math.sqrt(vr()) * r * .7, q = new THREE.SphereGeometry(.12 + vr() * .1, 8, 6); q.scale(1, .45, 1); q.translate(Math.cos(a) * d, .02, Math.sin(a) * d); geos.push(q); }
+  M(U.mergeBufferGeometries(geos), G.mat(PLAT_DOT[L.T.id][st], .5), 0, 0, 0, g, false);
 }
 G.seaTime = { value: 0 };
 
 function island(x, y, z, r, opt = {}) {
-  const T = L.T, g = new THREE.Group(); g.position.set(x, y, z); L.stat.add(g);
-  const topMat = G.mat(T.top, T.id === 'icecream' ? .15 : .45, { envMapIntensity: T.id === 'icecream' ? 1.2 : .8 });
-  M(CYL(r, r, .5, 48), topMat, 0, -.25, 0, g);
-  M(CYL(r * .98, r * .7, 2.2, 40), G.mat(T.side, .75), 0, -1.6, 0, g);
-  M(new THREE.ConeGeometry(r * .7, 3.2, 32), G.mat(T.side, .8), 0, -4.3, 0, g).rotation.x = Math.PI;
+  const T = L.T, vr = L.vr, g = new THREE.Group(); g.position.set(x, y, z); L.stat.add(g);
+  const sm = sideMaterial(T);
+  const top = M(CYL(r, r, .5, 48), [sm.side, topMaterial(T), sm.side], 0, -.25, 0, g); top.rotation.y = vr() * TAU;
+  M(CYL(r * .98, r * .7, 2.2, 40), sm.side, 0, -1.6, 0, g);
+  M(new THREE.ConeGeometry(r * .7, 3.2, 32), sm.tip, 0, -4.3, 0, g).rotation.x = Math.PI;
   const rim = M(new THREE.TorusGeometry(r, .32, 10, 56), G.mat(T.rim, .5), 0, -.02, 0, g); rim.rotation.x = Math.PI / 2;
+  if (DRIP[T.id]) { const dm = G.gloss(DRIP[T.id]);
+    M(CYL(r + .03, r * .985, .42, 48, 1, true), dm, 0, -.5, 0, g, false);
+    for (let i = 0, n = Math.round(r * 2.4); i < n; i++) { const a = (i + vr() * .7) / n * TAU, len = .45 + vr() * 1.3;
+      const d = M(SPH(.3, 10, 8), dm, Math.cos(a) * (r + .01), -.55 - len * .4, Math.sin(a) * (r + .01), g, false); d.scale.set(.8 + vr() * .6, len * 1.7, .5); d.rotation.y = -a + Math.PI / 2; } }
   decorate(g, r, opt);
   G.addCyl(x, z, r + .15, y - 6, y);
   return { x, y, z, r, g };
@@ -100,7 +181,7 @@ function decorate(g, r, opt) {
   }
 }
 function platform(x, y, z, r, opt = {}) {
-  const T = L.T, [top, side] = T.plats[opt.style ?? (L.rnd() < .5 ? 0 : 1)];
+  const T = L.T, st = opt.style ?? (L.rnd() < .5 ? 0 : 1), [top, side] = T.plats[st];
   const g = new THREE.Group(); g.position.set(x, y, z); (opt.dynamic ? L.dyn : L.stat).add(g);
   let col;
   const tri = T.id === 'spicy' && opt.style === 0;
@@ -112,6 +193,7 @@ function platform(x, y, z, r, opt = {}) {
     G.outline(M(geo, [G.mat(side, .6), G.mat(top, .45), G.mat(side, .6)], 0, -.3, 0, g), .02);
     col = G.addCyl(x, z, tri ? r * .7 : r, y - .6, y);
   }
+  if (!opt.bouncy) platDeco(g, tri ? r * .5 : r, st);
   if (opt.bouncy) {
     const j = M(SPH(r * .75, 24, 12, 0, TAU, 0, Math.PI / 2), G.mat('#ff7ab8', .1, { envMapIntensity: 1.4, transparent: true, opacity: .85 }), 0, 0, 0, g); j.scale.y = .45;
     col.bouncy = true; col.jelly = j; col.y1 += .2;
@@ -177,11 +259,11 @@ function makeSea() {
 G.buildLevel = (w, diff) => {
   if (L) G.disposeLevel();
   const T = G.THEMES[w];
-  L = G.L = { w, T, diff, rnd: G.rng(1000 + w * 77), root: new THREE.Group(), items: [], friends: [], chilis: [], cps: [], enemies: [], movers: [], fallers: [], spinners: [],
+  L = G.L = { w, T, diff, rnd: G.rng(1000 + w * 77), vr: G.rng(555 + w), root: new THREE.Group(), items: [], friends: [], chilis: [], cps: [], enemies: [], movers: [], fallers: [], spinners: [],
     shots: [], rings: [], rains: [], boss: null, bossDone: false, saucer: null, t: 0 };
   L.stat = new THREE.Group(); L.dyn = new THREE.Group(); L.root.add(L.stat, L.dyn); G.scene.add(L.root);
   G.colliders.length = 0;
-  G.setSky(T.sky[0], T.sky[1], T.sky[2], T.fog, T.sun, T.hemi[0], T.hemi[1]);
+  G.setSky(T.sky[0], T.sky[1], T.sky[2], T.fog, T.sun, T.hemi[0], T.hemi[1], T.cloud);
   const rnd = L.rnd;
   let ang = 0, cur = island(0, 0, 0, 7, { clear: [0, 2.5] });
   addToaster(0, 0, 2.6, Math.PI, true);
@@ -261,6 +343,10 @@ G.buildLevel = (w, diff) => {
   makeSea(); farDecor();
   // collectibles (instanced: one draw call per part)
   L.itemParts = G.itemParts(T.item).map(pt => { const im = new THREE.InstancedMesh(pt.geo, pt.mat, L.items.length); im.castShadow = true; L.dyn.add(im); return im; });
+  { const arr = new Float32Array(L.items.length * 3); L.items.forEach((it, i) => { arr[i * 3] = it.p.x; arr[i * 3 + 1] = it.p.y; arr[i * 3 + 2] = it.p.z; });
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+    L.itemGlow = new THREE.Points(geo, new THREE.PointsMaterial({ map: G.SOFT, color: G.C('#fff3c4'), size: 2, transparent: true, opacity: .26, depthWrite: false, blending: THREE.AdditiveBlending }));
+    L.itemGlow.frustumCulled = false; L.dyn.add(L.itemGlow); }
   L.totalItems = L.items.length; L.totalFriends = L.friends.length;
   mergeStatic(L.stat);
   L.stat.updateMatrixWorld(true);
@@ -328,12 +414,15 @@ function hitPlayer(P, from) { say('hurt', from); }
 G.enemyFlyY = 2.4;
 
 G.updateLevel = (dt, t, P) => {
-  L.t = t; G.seaTime.value = t; G.bubbleMat.uniforms.t.value = t;
+  L.t = t; G.seaTime.value = t; G.bubbleMat.uniforms.t.value = t; G.skyMat.uniforms.time.value = t;
+  const amb = AMBIENT[L.T.id];
+  if (amb && G.quality !== 'low' && Math.random() < dt * amb.rate) { const f = P.pos.y < -1000 ? G.camera.position : P.pos;
+    G.emit(f.x + (Math.random() - .5) * 40, f.y + amb.y0 + Math.random() * amb.yr, f.z + (Math.random() - .5) * 40, amb.o); }
   const pc = new V3(P.pos.x, P.pos.y + 1, P.pos.z);
   // collectibles
   let k = 0;
   for (const it of L.items) {
-    if (it.alive && it.p.distanceToSquared(pc) < 1.25) { it.alive = false; it.pop = 0; say('collect', it.p); }
+    if (it.alive && it.p.distanceToSquared(pc) < 1.25) { it.alive = false; it.pop = 0; say('collect', it.p); const gp = L.itemGlow.geometry.attributes.position; gp.setY(k, -9999); gp.needsUpdate = true; }
     if (!it.alive) it.pop = (it.pop || 0) + dt;
     const sc = it.alive ? 1 : Math.max(0, 1 - it.pop * 4);
     _e.set(0, t * 2.4 + k * .5, Math.sin(t * 2 + k) * .15); _q.setFromEuler(_e); _s.set(sc, sc, sc);
